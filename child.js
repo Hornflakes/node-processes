@@ -1,10 +1,6 @@
-const crypto = require('crypto');
+const { mergeSort } = require('./merge-sort');
 
-process.on('message', (e) => handleParentMsg(e));
-
-function handleParentMsg(e) {
-  for (let i = e.start; i < e.end; i++) {
-    const hash = crypto.createHash('md5').update(String(i)).digest('hex');
-    if (hash === e.hash) process.send(i);
-  }
-}
+process.on('message', (e) => {
+    const sortedArr = mergeSort(e.arr);
+    process.send({ sortedArr: sortedArr, arrNum: e.arrNum });
+});

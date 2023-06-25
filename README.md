@@ -1,3 +1,3 @@
-# processes-crack-md5
+# node-processes
 
-node.js processes crack md5
+node.js processes doing merge sort

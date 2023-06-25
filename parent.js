@@ -1,29 +1,41 @@
 const cluster = require('cluster');
-const os = require('os');
 
-const hash = '16cf868a5020546dc8b3ba16b37dc3ff';
-const maxNumber = 10_000_000;
-const processesCount = os.cpus().length;
-const numbersPerProcess = Math.round(maxNumber / processesCount);
+const max = 100_000;
+const arr = [];
+for (let i = 0; i < max; i++) {
+    arr.push(Math.round(Math.random() * max));
+}
+
+console.time('4 processes');
+
+const processesCount = 4;
+const processArrLen = max / processesCount;
 const children = [];
+const sortedArrs = [];
+let finishedChildren = 0;
 
-console.log('hash:', hash);
-console.time('cracked in');
-let i = 0;
-while (i < processesCount) {
-  const child = cluster.fork();
-  children.push(child);
+for (let i = 0, j = 0; i < max; i += processArrLen, j++) {
+    const processArr = arr.slice(i, i + processArrLen);
+    const child = cluster.fork();
 
-  const start = i * numbersPerProcess;
-  const end = ++i * numbersPerProcess;
-  child.send({ start, end, hash });
-  child.on('message', (e) => handleChildMsg(e));
+    children.push(child);
+    child.send({ arr: processArr, arrNum: j });
+    child.on('message', (e) => handleChildMsg(e));
 }
 
-function handleChildMsg(e) {
-  console.log('----------------');
-  console.log('cracked: ' + e);
-  console.log('----------------');
-  console.timeEnd('cracked in');
-  children.forEach((c) => c.kill());
-}
+const handleChildMsg = (e) => {
+    sortedArrs[e.arrNum] = e.sortedArr;
+    finishedChildren++;
+
+    if (finishedChildren == processesCount) {
+        children.forEach((c) => c.kill());
+
+        const sortedArr = [];
+        sortedArrs.forEach((arr) => {
+            sortedArr.push(...arr);
+        });
+
+        console.log(sortedArr);
+        console.timeEnd('4 processes');
+    }
+};
